@@ -44,7 +44,8 @@ $fields = array(
                 'textarea',
                 array('Exif.UserComment',
                       'Exif.TIFFImageDescription',
-                      'Exif.TIFFUserComment')),
+                      'Exif.TIFFUserComment',
+                      'Exif.ImageDescription')),
 
     50 => array('Iptc.Byline',
                 'img_artist',
@@ -88,4 +89,13 @@ $fields = array(
                 'img_keywords',
                 'text',
                 array('Exif.Category')),
+
+    130 => array('Iptc.SpecialInstructions',
+                'Special Instructions',
+                'text',),
+
+    140 => array('Iptc.Source',
+                'Source',
+                'text',)
+
 );

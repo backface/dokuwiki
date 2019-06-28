@@ -1,16 +1,40 @@
 <?php
-/**
- * This is an example of how a local.php could look like.
- * Simply copy the options you want to change from dokuwiki.php
- * to this file and change them.
- *
- * When using the installer, a correct local.php file be generated for
- * you automatically.
- */
 
 
-//$conf['title']       = 'My Wiki';        //what to show in the title
+$conf['title'] = 'FSS';
+$conf['lang'] = 'de';
+$conf['template'] = 'fss';
+$conf['license'] = '';
+$conf['breadcrumbs'] = 0;
+$conf['tocminheads'] = '0';
+$conf['useheading'] = '1';
+$conf['useacl'] = 1;
+$conf['superuser'] = '@admin';
+$conf['disableactions'] = 'register';
+$conf['htmlok'] = 1;
+$conf['target']['extern'] = '_blank';
+$conf['userewrite'] = '1';
+$conf['useslash'] = 1;
+$conf['renderer_xhtml'] = 'xbr';
 
-//$conf['useacl']      = 1;                //Use Access Control Lists to restrict access?
-//$conf['superuser']   = 'joe';
+$conf['plugin']['slider']['width'] = 640;
+$conf['plugin']['translation']['translations'] = 'en';
+$conf['plugin']['translation']['display'] = 'langcode';
+$conf['plugin']['translation']['translateui'] = 1;
+$conf['plugin']['translation']['show_path'] = 0;
 
+$conf['tpl']['fss']['bootswatchTheme'] = 'yeti';
+$conf['tpl']['fss']['inverseNavbar'] = 1;
+$conf['tpl']['fss']['fixedTopNavbar'] = 1;
+$conf['tpl']['fss']['showTools'] = 'logged';
+$conf['tpl']['fss']['hideLoginLink'] = 1;
+$conf['tpl']['fss']['showEditBtn'] = 'logged';
+$conf['tpl']['fss']['showLandingPage'] = 1;
+$conf['tpl']['fss']['showPageTools'] = 'logged';
+$conf['tpl']['fss']['showPageId'] = 0;
+$conf['tpl']['fss']['showBadges'] = 0;
+$conf['tpl']['fss']['browserTitle'] = '@TITLE@ / @WIKI@';
+$conf['tpl']['fss']['pageInfo'] = '';
+
+
+// end auto-generated content

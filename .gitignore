@@ -37,6 +37,7 @@
 !/data/pages/wiki/syntax.txt
 !/data/pages/wiki/welcome.txt
 /lib/tpl/*
+!/lib/tpl/fss
 !/lib/tpl/dokuwiki
 !/lib/tpl/index.php
 /lib/plugins/*

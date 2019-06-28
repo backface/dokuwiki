@@ -1,0 +1,7 @@
+base     STWST
+author   Michael Aschauer
+email    m@ash.to
+date     2017-03-01
+name     STWST Template
+desc     STWST Template based Bootstrap-based template for Dokuwiki
+url      http://www.stwst.at

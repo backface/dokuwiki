@@ -85,6 +85,54 @@ function media_metasave($id,$auth,$data){
         // add a log entry to the media changelog
         addMediaLogEntry($new, $id, DOKU_CHANGE_TYPE_EDIT, $lang['media_meta_edited'], '', null, $sizechange);
 
+	
+		// BEGIN publish hack for STWST
+		$src = mediaFN($id);
+		$meta = new JpegMeta($src);
+		
+		$dates['EarliestTimeStr'] = date("Y-m-d H:i:s", $earliestTime);
+    
+		$filename = array_pop(explode(":",$id));
+		$source = mediaFN($id);
+		$dest = str_replace('foto/archived','foto/published', $source);
+		$dest_dir = str_replace($filename,"", $dest);
+		
+		preg_match('/(19|20\d{2})/', $meta->getField('Iptc.CopyrightNotice'), $matches, PREG_OFFSET_CAPTURE);
+		if ($matches[1][0]) {
+			$year = $matches[1][0];
+		} else {
+			$meta->getBasicInfo();
+			//print_r($meta->getDateField('EarliestTimeStr'));
+			$year = date("Y", $meta->getField('Date.EarliestTimeStr'));
+		}
+		
+		$lnk_dir = $conf['mediadir'] . '/foto/published/' . $year;
+		$lnk_dest = $lnk_dir . '/' . $filename;
+
+		if (media_ispublished($id)) {
+			@mkdir($dest_dir, 0777, true);
+			copy($source, $dest);
+			@mkdir($lnk_dir, 0777, true);
+			symlink($dest, $lnk_dest);
+			
+		} else {
+			if (file_exists($lnk_dest)) {
+				unlink($lnk_dest);
+			}
+			if (file_exists($dest)) {
+				unlink($dest);
+			} 
+
+			if (count(glob("$lnk_dir/*")) === 0) {
+				rmdir($lnk_dir);
+			}
+			if (count(glob("$dest_dir/*")) === 0) {
+				rmdir($dest_dir);
+			}
+		}
+		// END publish hack for STWST
+    
+    
         msg($lang['metasaveok'],1);
         return $id;
     }else{
@@ -1609,6 +1657,26 @@ function media_printfile($item,$auth,$jump,$display_namespace=false){
     echo '</div>'.NL;
 }
 
+
+/**
+ * Check if a media item is published (has a flag in Iptc.SpecialInstructions)
+ *
+ * @author Michael Aschauer <m@ash.to>
+ *
+ * @param string $id  the media ID or URL
+ * @return bool
+ */
+function media_ispublished ($id) {
+	$src = mediaFN($id);
+    $meta = new JpegMeta($src);
+				
+	if (strpos($meta->getField('Iptc.SpecialInstructions'),"published") !== false) {
+		return true;
+	} else {
+		return false;
+	}
+}
+
 /**
  * Display a media icon
  *
@@ -1644,8 +1712,12 @@ function media_printfile_thumbs($item,$auth,$jump=false,$display_namespace=false
     $file = utf8_decodeFN($item['file']);
 
     // output
-    echo '<li><dl title="'.hsc($item['id']).'">'.NL;
-
+    if (media_ispublished($item['id'])) {
+		 echo '<li class="published">';
+	} else {
+		echo '<li>';
+	}
+	echo '<dl title="'.hsc($item['id']).'">'.NL;
         echo '<dt>';
     if($item['isimg']) {
         media_printimgdetail($item, true);
@@ -1667,11 +1739,21 @@ function media_printfile_thumbs($item,$auth,$jump=false,$display_namespace=false
         'tab_details' => 'view')).'" id="h_:'.$item['id'].'">'.$name.'</a></dd>'.NL;
 
     if($item['isimg']){
+		
+		preg_match('/(19|20\d{2})/', $item["meta"]->getField('Iptc.CopyrightNotice'), $matches, PREG_OFFSET_CAPTURE);
+		if ($matches[1][0]) {
+			$year = $matches[1][0];
+		} else {
+			$year = date("Y",$item["meta"]->getField('Date.EarliestTime'));
+		}
+		
+	    echo '<dd class="date">'. $year .'</dd>'.NL;
         $size = '';
         $size .= (int) $item['meta']->getField('File.Width');
         $size .= '&#215;';
         $size .= (int) $item['meta']->getField('File.Height');
         echo '<dd class="size">'.$size.'</dd>'.NL;
+       
     } else {
         echo '<dd class="size">&#160;</dd>'.NL;
     }
@@ -1681,6 +1763,24 @@ function media_printfile_thumbs($item,$auth,$jump=false,$display_namespace=false
     echo '<dd class="filesize">'.$filesize.'</dd>'.NL;
     echo '</dl></li>'.NL;
 }
+
+
+function recurse_copy($src,$dst) {
+    $dir = opendir($src);
+    @mkdir($dst);
+    while(false !== ( $file = readdir($dir)) ) {
+        if (( $file != '.' ) && ( $file != '..' )) {
+            if ( is_dir($src . '/' . $file) ) {
+                recurse_copy($src . '/' . $file,$dst . '/' . $file);
+            }
+            else {
+                copy($src . '/' . $file,$dst . '/' . $file);
+            }
+        }
+    }
+    closedir($dir);
+} 
+
 
 /**
  * Prints a thumbnail and metainfo
@@ -1704,6 +1804,13 @@ function media_printimgdetail($item, $fullscreen=false){
         $h = floor($h * $ratio);
     }
     $src = ml($item['id'],array('w'=>$w,'h'=>$h,'t'=>$item['mtime']));
+    
+    if (media_ispublished($item)) {
+		global $conf;
+		$filename = $item['meta']->getField('File.Name');
+		echo mediaFN($item['id']) .NL;
+    }
+       
     $p = array();
     if (!$fullscreen) {
         // In fullscreen mediamanager view, image resizing is done via CSS.
