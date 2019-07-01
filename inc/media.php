@@ -50,6 +50,7 @@ function media_filesinuse($data,$id){
  * @param array $data
  * @return false|string
  */
+ 
 function media_metasave($id,$auth,$data){
     if($auth < AUTH_UPLOAD) return false;
     if(!checkSecurityToken()) return false;
@@ -59,6 +60,44 @@ function media_metasave($id,$auth,$data){
 
     $meta = new JpegMeta($src);
     $meta->_parseAll();
+
+    
+    // BEGIN publish hack for STWST
+		
+	$filename = array_pop(explode(":",$id));
+	$source = mediaFN($id);
+	$dest = str_replace('foto/archived','foto/published/by_user', $source);
+	$dest_dir = str_replace($filename,"", $dest);
+	
+	$dates['EarliestTimeStr'] = date("Y-m-d H:i:s", $earliestTime);
+	preg_match('/(19|20\d{2})/', $meta->getField('Iptc.CopyrightNotice'), $matches, PREG_OFFSET_CAPTURE);
+	if ($matches[1][0]) {
+		$year = $matches[1][0];
+	} else {
+		$meta->getBasicInfo();
+		$year = date("Y", $meta->getField('Date.EarliestTime'));
+	}
+	$lnk_dir = $conf['mediadir'] . '/foto/published/by_year/' . $year;
+	$lnk_dest = $lnk_dir . '/' . $filename;
+
+	if (media_ispublished($id)) {
+		if (file_exists($lnk_dest)) {
+			unlink($lnk_dest);
+		}
+		if (file_exists($dest)) {
+			unlink($dest);
+		} 
+
+		if (count(glob("$lnk_dir/*")) === 0) {
+			rmdir($lnk_dir);
+		}
+		if (count(glob("$dest_dir/*")) === 0) {
+			rmdir($dest_dir);
+		}
+	}
+	// END publish hack for STWST
+		
+		
 
     foreach($data as $key => $val){
         $val=trim($val);
@@ -85,28 +124,25 @@ function media_metasave($id,$auth,$data){
         // add a log entry to the media changelog
         addMediaLogEntry($new, $id, DOKU_CHANGE_TYPE_EDIT, $lang['media_meta_edited'], '', null, $sizechange);
 
-	
 		// BEGIN publish hack for STWST
 		$src = mediaFN($id);
 		$meta = new JpegMeta($src);
 		
-		$dates['EarliestTimeStr'] = date("Y-m-d H:i:s", $earliestTime);
-    
 		$filename = array_pop(explode(":",$id));
 		$source = mediaFN($id);
-		$dest = str_replace('foto/archived','foto/published', $source);
+		$dest = str_replace('foto/archived','foto/published/by_user', $source);
 		$dest_dir = str_replace($filename,"", $dest);
 		
+		$dates['EarliestTimeStr'] = date("Y-m-d H:i:s", $earliestTime);
 		preg_match('/(19|20\d{2})/', $meta->getField('Iptc.CopyrightNotice'), $matches, PREG_OFFSET_CAPTURE);
 		if ($matches[1][0]) {
 			$year = $matches[1][0];
 		} else {
 			$meta->getBasicInfo();
-			//print_r($meta->getDateField('EarliestTimeStr'));
-			$year = date("Y", $meta->getField('Date.EarliestTimeStr'));
+			$year = date("Y", $meta->getField('Date.EarliestTime'));
 		}
 		
-		$lnk_dir = $conf['mediadir'] . '/foto/published/' . $year;
+		$lnk_dir = $conf['mediadir'] . '/foto/published/by_year/' . $year;
 		$lnk_dest = $lnk_dir . '/' . $filename;
 
 		if (media_ispublished($id)) {
@@ -115,23 +151,8 @@ function media_metasave($id,$auth,$data){
 			@mkdir($lnk_dir, 0777, true);
 			symlink($dest, $lnk_dest);
 			
-		} else {
-			if (file_exists($lnk_dest)) {
-				unlink($lnk_dest);
-			}
-			if (file_exists($dest)) {
-				unlink($dest);
-			} 
-
-			if (count(glob("$lnk_dir/*")) === 0) {
-				rmdir($lnk_dir);
-			}
-			if (count(glob("$dest_dir/*")) === 0) {
-				rmdir($dest_dir);
-			}
-		}
+		} 
 		// END publish hack for STWST
-    
     
         msg($lang['metasaveok'],1);
         return $id;
